@@ -1,18 +1,39 @@
 buildscript {
 	ext {
 		springBootVersion = '1.5.9.RELEASE'
+                dependencyCheckVersion  = '3.0.2'
+                jfrogBuildInfoExtractor = '3.0.1'
 	}
 	repositories {
 		mavenCentral()
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+                classpath("org.owasp:dependency-check-gradle:${dependencyCheckVersion}")
+                classpath("org.jfrog.buildinfo:build-info-extractor-gradle:${jfrogBuildInfoExtractor}")
 	}
+}
+
+plugins {
+  id "com.jfrog.artifactory" version "4.5.4"
+  id "org.owasp.dependencycheck" version "3.0.2"
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'idea'
+
+// Apply the maven-publish plugin to publish artifacts to a Maven Repository
+apply plugin: 'maven-publish'
+
+// Apply the Artifactory Build Repository plugin
+apply plugin: "com.jfrog.artifactory"
+
+// Apply the OWASP DependencyCheck plugin to all projects
+allprojects {
+    apply plugin: 'org.owasp.dependencycheck'
+}
 
 group = 'com.ncisecurityproject'
 version = '0.0.1-SNAPSHOT'
@@ -22,6 +43,33 @@ repositories {
 	mavenCentral()
 }
 
+// Add build label
+//jar {
+//    baseName = 'gs-securing-web'
+ //   version =  '0.1.0'
+//}
+
+
+// In this section you declare where to find the dependencies of your project
+repositories {
+    // Use jcenter for resolving your dependencies.
+    jcenter()
+
+    // You can declare any Maven/Ivy/file repository here.
+    maven {
+            url 'http://localhost:8081/artifactory/plugins-release'
+            credentials {
+                username = "${artifactory_user}"
+                password = "${artifactory_password}"
+            }
+            name = "maven-main-cache" 
+       }
+}
+
+group = 'com.nciproject'
+version = '1.0.0-SNAPSHOT'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-data-jpa')
@@ -33,3 +81,52 @@ dependencies {
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile('org.springframework.security:spring-security-test')
 }
+
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"
+    publish {
+        repository {
+            repoKey = 'libs-snapshot-local'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+
+        }       
+        defaults {
+            publications ('mavenJava')
+            publishArtifacts = true
+        }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+    }
+    }
+}
+
+// dependencyCheck settings
+dependencyCheck { 
+// Format of the security report output e.g HTML, JSON, XML 
+     autoUpdate=false
+     cveValidForHours=1
+     format='ALL'
+}
+
+check.dependsOn dependencyCheckAnalyze
+
+task printDependencyCheckReportLink(dependsOn: dependencyCheckAnalyze){
+doLast{
+    println "Dependency Check Report Link : " + project.buildDir + "/reports/dependency-check-report.html"
+ }
+}
+
+//project.tasks["runDependencyCheckReport"].dependsOn "dependencyCheckAnalyze"
+
+//artifactoryPublish.dependsOn 'dependencyCheck'
+
+//project.artifactoryPublish.dependsOn 'dependencyCheck'
+
+//artifactoryPublish.dependsOn 'dependencyCheck', 'build'
