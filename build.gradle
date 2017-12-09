@@ -45,19 +45,11 @@ allprojects {
     targetCompatibility = 1.8
 }
 
-//group = 'com.ncisecurityproject'
-//version = '0.0.1-SNAPSHOT'
-//sourceCompatibility = 1.8
 
 repositories {
 	mavenCentral()
 }
 
-// Add build label
-//jar {
-//    baseName = 'gs-securing-web'
- //   version =  '0.1.0'
-//}
 
 
 // In this section you declare where to find the dependencies of your project
