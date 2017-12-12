@@ -91,9 +91,10 @@ artifactory {
             password = "${artifactory_password}"
             maven = true
 
-        }       
+        }  
+        //Add another publication named 'mavenReports' just for the owasp dependency check report       
         defaults {
-            publications ('mavenJava')
+            publications ('mavenJava', 'mavenReports')
             publishArtifacts = true
         }
     }
@@ -103,9 +104,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            //artifact file(project.buildDir + "/reports/dependency-check-report.html")
-            //artifact file("build/reports/dependency-check-report.html")
-
+            
             pom.withXml {
                     asNode().with {
                         appendNode('packaging', 'jar')
@@ -128,6 +127,13 @@ publishing {
                      }
                  }
     }
+
+    //Use a separate publication for the OWASP DependencyCheck reports
+    mavenReports(MavenPublication) {
+      groupId 'com.ncisecurityproject.reports'
+      artifactId 'webapp'
+      artifact file("build/reports/dependency-check-report.html")
+    }
   }
 }
 
@@ -147,11 +153,9 @@ doLast{
  }
 }
 
-//project.tasks["runDependencyCheckReport"].dependsOn "dependencyCheckAnalyze"
+
 
 //artifactoryPublish.dependsOn 'dependencyCheck'
-
-//project.artifactoryPublish.dependsOn 'dependencyCheck'
 
 //artifactoryPublish.dependsOn 'dependencyCheck', 'build'
 
